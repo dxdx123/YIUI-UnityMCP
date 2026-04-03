@@ -114,7 +114,17 @@ npm install
 npm run build
 ```
 
-### 4. 使用内置 CLI flow
+### 4. Odin 依赖说明
+
+YIUIMCP 当前的可视化窗口基于 Odin Inspector 实现。
+
+也就是说：
+
+- 如果你希望直接使用仓库里现成的可视化窗口界面，项目里需要有 Odin 插件
+- 这个依赖主要对应窗口与可视化交互部分
+- YIUIMCP 的底层设计重点仍然是 CLI flow、编排能力与可扩展框架思路
+
+### 5. 使用内置 CLI flow
 
 例如编译：
 
