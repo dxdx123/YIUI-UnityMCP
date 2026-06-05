@@ -436,6 +436,30 @@ namespace YIUIFramework.Editor.MCP
 
 
 
+        public static object GetPrivateField(object target, string fieldName)
+
+        {
+
+            var type = target.GetType();
+
+            while (type != null)
+
+            {
+
+                var field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+                if (field != null) return field.GetValue(target);
+
+                type = type.BaseType;
+
+            }
+
+            throw new MissingFieldException(target.GetType().FullName, fieldName);
+
+        }
+
+
+
         public static void MarkDirty(Object obj)
 
         {

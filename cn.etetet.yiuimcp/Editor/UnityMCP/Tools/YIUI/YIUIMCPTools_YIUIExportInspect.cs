@@ -70,9 +70,65 @@ namespace YIUIFramework.Editor.MCP
 
                 var component = YIUIMCPYIUIHelper.FindComponentByType(target, data.componentType);
 
-                var bindDic = YIUIMCPYIUIHelper.GetPrivateDictionary<Dictionary<string, Component>>(cdeTable.ComponentTable, "m_AllBindDic");
 
-                bindDic[data.bindName] = component;
+
+                // 关键: 写入 m_AllBindPair (Odin 序列化的“编辑数据”源), 而不是 m_AllBindDic。
+
+                // m_AllBindDic 只是 AutoCheck/CheckAllBindName 从 m_AllBindPair 重建出来的派生缓存,
+
+                // 导出时的 AutoCheck 会 Clear 它再重建; 只写 dict 会在导出时被清空 => 绑定丢失。
+
+                // (Data/Event 表的 dict 本身就是源数据, 没有 pair 列表, 所以直接写没问题。)
+
+                var pairList = (System.Collections.IList)YIUIMCPYIUIHelper.GetPrivateField(cdeTable.ComponentTable, "m_AllBindPair");
+
+                var pairType = YIUIMCPYIUIHelper.ResolveType("YIUIFramework.UIBindPairData");
+
+                var nameField = pairType.GetField("Name");
+
+                var compField = pairType.GetField("Component");
+
+
+
+                object existing = null;
+
+                foreach (var p in pairList)
+
+                {
+
+                    if ((string)nameField.GetValue(p) == data.bindName) { existing = p; break; }
+
+                }
+
+
+
+                if (existing != null)
+
+                {
+
+                    compField.SetValue(existing, component); // 幂等: 同名则更新引用
+
+                }
+
+                else
+
+                {
+
+                    var pair = Activator.CreateInstance(pairType);
+
+                    nameField.SetValue(pair, data.bindName);
+
+                    compField.SetValue(pair, component);
+
+                    pairList.Add(pair);
+
+                }
+
+
+
+                // 重建 m_AllBindDic, 与 YIUI 官方检查流程保持一致
+
+                cdeTable.ComponentTable.AutoCheck();
 
 
 
