@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 using Sirenix.OdinInspector;
 
+using UnityEditor;
+
 using UnityEngine;
 
 using YIUIFramework;
@@ -191,6 +193,18 @@ namespace YIUIFramework.Editor.MCP
             var cdeTable = YIUIMCPYIUIHelper.LoadPrefabCdeTable(data.prefabPath, out _);
 
             if (!YIUIMCPYIUIHelper.AutoCheck(cdeTable)) return YIUIMCPResult.FailureLog($"YIUI AutoCheck失败: {data.prefabPath}");
+
+
+
+            // AutoCheck 会在内存中规范化 CDE 字段(如从 GameObject 名重算 ResName)。
+
+            // 头less 导出不像编辑器手动保存那样落盘, 必须显式持久化, 否则 prefab 上的
+
+            // ResName 等会残留旧值(典型: 拆分后 ResName 仍是 XxxPanelSource), 与生成代码不一致。
+
+            YIUIMCPYIUIHelper.MarkDirty(cdeTable);
+
+            AssetDatabase.SaveAssets();
 
 
 
