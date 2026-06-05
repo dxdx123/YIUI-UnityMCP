@@ -186,7 +186,7 @@ Node.js 编排层，包括：
 
 ### `cn.etetet.yiuimcp/skills`
 
-包内附带的 Codex skill，用来让 AI 以 CLI-first 的方式理解和驱动这个包：
+包内附带的 skill，让 AI 以 CLI/RPC-first 的方式理解和驱动这个包，**同时支持 Codex 与 Claude Code**：
 
 - [cn.etetet.yiuimcp/skills/yiuimcp/SKILL.md](./cn.etetet.yiuimcp/skills/yiuimcp/SKILL.md)
 
@@ -195,7 +195,8 @@ Node.js 编排层，包括：
 常见做法：
 
 - 跟着 `cn.etetet.yiuimcp` 一起放进你自己的 Unity 项目
-- 或者单独拷贝到你自己的 Codex skills 目录中使用
+- **Codex**：拷贝到你的 Codex skills 目录
+- **Claude Code**：本包根目录已带 `.claude-plugin/plugin.json`，是一个 Claude Code plugin——在工程根执行 `claude --plugin-dir Packages/cn.etetet.yiuimcp` 即可加载（skill 为 `/yiuimcp:yiuimcp`）；或把 SKILL.md 拷到 `.claude/skills/yiuimcp/`。详见 [包内 README「在 Claude Code 中使用」](./cn.etetet.yiuimcp/README.md#在-claude-code-中使用)
 
 它的目标就是让你在自己的项目里，也能延续这套 CLI-first 的 YIUIMCP 工作方式。
 

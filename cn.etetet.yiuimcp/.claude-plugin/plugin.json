@@ -1,0 +1,9 @@
+{
+  "name": "yiuimcp",
+  "description": "YIUI MCP — CLI/RPC-first Unity UI 自动化 (ET/YIUI 工程): 建面板/视图/列表、编辑布局、组件/数据/事件绑定、截图自检与运行态验证。本插件随包携带 yiuimcp skill, 让 Claude Code 即插即用地驱动 Unity。",
+  "version": "0.0.1",
+  "author": {
+    "name": "YIYI"
+  },
+  "homepage": "https://github.com/dxdx123/YIUI-UnityMCP"
+}

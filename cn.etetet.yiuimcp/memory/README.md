@@ -4,8 +4,8 @@
 
 ## 两种加载方式
 
-1. **SKILL.md 自动加载（无需手动）**
-   `skills/yiuimcp/SKILL.md` 会被 Claude Code 当作 skill 自动发现/加载，里面已包含 `/rpc` 主干用法、全工具速查、Panel→View→Item 工作流、关键踩坑。这是最主要的"随身能力"。
+1. **SKILL.md 作为 skill 加载（主要能力）**
+   `skills/yiuimcp/SKILL.md` 里已包含 `/rpc` 主干用法、全工具速查、Panel→View→Item 工作流、关键踩坑。本包根目录带 `.claude-plugin/plugin.json`，是一个 Claude Code plugin——在工程根 `claude --plugin-dir Packages/cn.etetet.yiuimcp` 即可加载（skill 为 `/yiuimcp:yiuimcp`，并按 description 自动按需调用）。Claude Code **不会**自动扫描 Unity 包内的 `skills/`，所以必须经 plugin 或拷到 `.claude/skills/` 才能用（详见包内 README「在 Claude Code 中使用」）。Codex 则直接识别本 skill。
 
 2. **memory/ 手动导入（可选，增强上下文）**
    Claude Code 的长期记忆位于用户机器的 `~/.claude/projects/<工程哈希>/memory/`，**不会**从仓库自动加载。若想让新工程的 AI 拥有下面这些记忆，把本目录的 `*.md` 拷进该工程对应的 memory 目录即可（`MEMORY.md` 作为索引，可与已有 `MEMORY.md` 合并）。

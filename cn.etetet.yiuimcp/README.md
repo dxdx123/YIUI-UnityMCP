@@ -106,7 +106,24 @@ Use $yiuimcp to compile this Unity project through its bundled CLI flow.
 
 对应的 UI 元数据位于：
 
-- [skills/yiuimcp/agents/openai.yaml](skills/yiuimcp/agents/openai.yaml)
+- [skills/yiuimcp/agents/openai.yaml](skills/yiuimcp/agents/openai.yaml)（仅 Codex 使用，Claude Code 会忽略）
+
+### 在 Claude Code 中使用
+
+本包同时是一个 **Claude Code plugin**：根目录有 `.claude-plugin/plugin.json`，skill 位于 `skills/yiuimcp/`。Claude Code 不会自动扫描 Unity 包内的 `skills/`，需用以下任一方式启用：
+
+- **作为 plugin 加载（推荐，随包移植）**——在工程根目录执行：
+  ```bash
+  claude --plugin-dir Packages/cn.etetet.yiuimcp
+  ```
+  之后 skill 以 `/yiuimcp:yiuimcp` 提供，Claude 也会按 `description` 自动按需调用。
+- **或拷进项目级 skills 目录**：
+  ```bash
+  mkdir -p .claude/skills/yiuimcp
+  cp Packages/cn.etetet.yiuimcp/skills/yiuimcp/SKILL.md .claude/skills/yiuimcp/
+  ```
+
+> `.claude-plugin/` 以点开头，Unity 会忽略该目录（不导入、不生成 .meta），不影响 Unity 工程。
 
 ## 随身记忆（memory/）
 
