@@ -249,7 +249,10 @@ namespace YIUIFramework.Editor.MCP
             var startTime = DateTime.Now;
 
             string body;
-            using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
+            // JSON-RPC 请求体按规范一律为 UTF-8。不要用 request.ContentEncoding:
+            // Mono/.NET 的 HttpListener 在缺少 charset 时(甚至带 charset 时)会返回系统 ANSI
+            // 代码页(如中文 Windows 的 GBK), 把 UTF-8 字节按 GBK 解码 -> 中文参数变乱码。
+            using (var reader = new StreamReader(request.InputStream, Encoding.UTF8))
             {
                 body = await reader.ReadToEndAsync();
             }
