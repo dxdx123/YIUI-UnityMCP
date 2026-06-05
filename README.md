@@ -72,6 +72,23 @@ YIUIMCP 的基础设计就是围绕这个问题展开：
 
 YIUIMCP 更像一个可以持续长大的底层能力框架，而不是只提供固定几个命令的工具包。
 
+## 本仓库的扩展（相对原生 YIUIMCP 基础层）
+
+原生 YIUIMCP 提供的是**基础执行底座**：`Log` / `LogError` / `EnterPlayMode` / `StopPlayMode` / `TriggerCompile` / `GetCompileResult` / `GetConsoleLog` / `ExecuteMenu` / `AssertConsoleContains` 这 9 个原子工具，加上 UTO 编排层与基础 CLI flow。
+
+本仓库在此基础上，叠加了一整套 **YIUI UI 操作能力**（也是上面“在你的项目里持续往上扩展”的一个完整实现样例）：
+
+- **YIUI 创建链**：模块 / Panel 源数据 / 源数据拆分 / View / LoopScroll 滚动列表 / 代码导出 / CDE 绑定信息读取
+- **节点与布局**：增删/复制/移动节点、增删组件、RectTransform / Text / Graphic / LayoutGroup / LayoutElement / ContentSizeFitter / 显隐 / Layer
+- **YIUI 绑定**：组件绑定(u_Com) / 数据绑定(u_Data：文本/显隐/颜色/图片) / 事件绑定(u_Event：点击)
+- **截图自检与运行态验证**：`YIUICapturePrefab`（渲染 prefab 为 PNG，让 AI 读图自检布局）、`YIUICaptureGameView` + `YIUISimulateClick`（Play 模式下模拟点击 + 截运行界面，形成“改完→看图→迭代”闭环）
+- **codegen 菜单 flow**：`proto2cs-flow.ps1` / `excel-export-flow.ps1`（一条命令跑 ET codegen + 重编译）
+- **更完整的 AI skill 与随身记忆**：`skills/yiuimcp/SKILL.md`（含 /rpc 主干、全工具速查、Panel→View→Item 工作流、关键踩坑）+ `cn.etetet.yiuimcp/memory/`（可随插件移植到其他项目的 AI 记忆）
+
+完整工具清单见 [SKILL.md 的工具速查表](./cn.etetet.yiuimcp/skills/yiuimcp/SKILL.md)（由 `Config/gen-skill-tools.ps1` 自动生成，当前共 43 个）。
+
+> 用法差异：基础层用 `Config/*.ps1` flow 即可覆盖；YIUI 操作工具几乎都是直接 `POST http://127.0.0.1:3212/rpc` 调用（详见 SKILL.md「`/rpc` 是主干」）。
+
 ## 适用场景
 
 如果你想让 AI 在 Unity 项目里更稳定地做这些事情，这个项目就适合你：
@@ -164,6 +181,8 @@ Node.js 编排层，包括：
 - `get_console_log.ps1`
 - `get_console_error.ps1`
 - `invoke-uto-tool.ps1`
+- `proto2cs-flow.ps1` / `excel-export-flow.ps1`（codegen 菜单 + 重编译；引擎 `menu-codegen-flow.ps1`）
+- `gen-skill-tools.ps1`（从 `[YIUIMCPTools]` 特性自动生成 SKILL.md 的工具速查表）
 
 ### `cn.etetet.yiuimcp/skills`
 

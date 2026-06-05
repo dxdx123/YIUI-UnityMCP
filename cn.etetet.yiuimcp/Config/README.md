@@ -8,6 +8,10 @@
 - `get_console_log.ps1`
 - `get_console_error.ps1`
 - `invoke-uto-tool.ps1`
+- `menu-codegen-flow.ps1`（通用 codegen 菜单流程引擎）
+- `proto2cs-flow.ps1`（ET/Proto/Proto2CS）
+- `excel-export-flow.ps1`（ET/Excel/ExcelExporter）
+- `gen-skill-tools.ps1`（生成 skills/yiuimcp/SKILL.md 工具速查表，纯 ASCII 脚本）
 
 ## 运行前提
 
@@ -210,6 +214,46 @@ $base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
 - 执行成功
 - 耗时约 `1.16 秒`
 - 返回：`Log, success`
+
+## 5. menu-codegen-flow.ps1 / proto2cs-flow.ps1 / excel-export-flow.ps1
+
+### 作用
+
+把"触发一个 codegen 菜单 → 退出 PlayMode → 编译 → 取编译结果"封装成一条命令。
+适用于生成代码后需要重编译的 ET 菜单（`[MenuItem]` 注册的都可）。
+
+`menu-codegen-flow.ps1` 是通用引擎，批次为：
+`StopPlayMode → ExecuteMenu(<MenuPath>) → TriggerCompile → GetCompileResult`
+（先退出 PlayMode，因为编译需要 edit 模式；codegen 后必然重编译，走 UTO `/batch` 自动处理域重载恢复）
+
+`proto2cs-flow.ps1` / `excel-export-flow.ps1` 是两个常用命令的薄包装。
+
+### 参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|------|------|
+| `MenuPath` | `string` | 必填(仅引擎) | 菜单路径，如 `ET/Proto/Proto2CS`；两个包装脚本已内置 |
+| `Force` | `bool` | `False` | 是否强制编译 |
+| `NoWait` | `bool` | `True` | 是否在结束后立即退出 |
+
+### 用法
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\Packages\cn.etetet.yiuimcp\Config\proto2cs-flow.ps1' -NoWait 1"
+powershell -ExecutionPolicy Bypass -Command "& '.\Packages\cn.etetet.yiuimcp\Config\excel-export-flow.ps1' -NoWait 1"
+# 任意 codegen 菜单：
+powershell -ExecutionPolicy Bypass -Command "& '.\Packages\cn.etetet.yiuimcp\Config\menu-codegen-flow.ps1' -MenuPath 'ET/Proto/Proto2CS' -NoWait 1"
+```
+
+### 本次实测结果（proto2cs-flow.ps1）
+
+- 执行成功，总耗时约 `4.38 秒`
+- 返回：`StopPlayMode SKIPPED` / `ExecuteMenu 成功` / `TriggerCompile TRIGGERED` / `GetCompileResult Success, No errors!`
+
+### 注意
+
+- `GetCompileResult` 会把控制台里的运行时异常也算进 error 计数。若之前长时间 PlayMode 刷了大量 NRE，编译结果可能显示巨量"errors"——真正重编译(域重载)会清空控制台，看最新一次结果即可。
+- 不传 `MenuPath` 直接用引擎会报必填错误；日常用两个包装脚本即可。
 
 ## 可传的常见工具参数
 

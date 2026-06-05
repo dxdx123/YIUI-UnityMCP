@@ -10,21 +10,19 @@
 - Unity 端 RPC 接口为 `POST /rpc`
 - UTO 提供 `GET /health`、`POST /call`、`POST /batch`、`GET /tools`
 
-## 当前可用的 Unity 原子工具
+## 当前可用工具
 
-- `Log`
-- `LogError`
-- `EnterPlayMode`
-- `StopPlayMode`
-- `TriggerCompile`
-- `GetCompileResult`
-- `GetConsoleLog`
-- `ExecuteMenu`
-- `AssertConsoleContains`
+当前共 **43 个**工具，分两类：
+
+**基础层（9 个，原生 YIUIMCP 能力）**：`Log` / `LogError` / `EnterPlayMode` / `StopPlayMode` / `TriggerCompile` / `GetCompileResult` / `GetConsoleLog` / `ExecuteMenu` / `AssertConsoleContains`
+
+**YIUI 操作层（34 个，本仓库扩展）**：YIUI 创建链、节点/布局/样式、组件/数据/事件绑定、`YIUICapturePrefab` / `YIUICaptureGameView` / `YIUISimulateClick` 截图自检与运行态验证等。
+
+> 完整工具速查表见 [skills/yiuimcp/SKILL.md](skills/yiuimcp/SKILL.md) 第 5 节，由 `Config/gen-skill-tools.ps1` 从 `[YIUIMCPTools]` 特性自动生成，新增工具后重跑即同步。
 
 说明：
 - 工具通过 `[YIUIMCPTools(...)]` 特性自动注册
-- 当前仓库中还存在一个 `compile-unity-flow` Flow 类型声明，但实际流程执行主要由 `Config/*.ps1` 和 UTO `/batch` 完成
+- **基础层**可用 `Config/*.ps1` flow 驱动；**YIUI 操作层**几乎都是直接 `POST /rpc`（见 SKILL.md「`/rpc` 是主干」）
 
 ## 依赖
 
@@ -109,6 +107,14 @@ Use $yiuimcp to compile this Unity project through its bundled CLI flow.
 对应的 UI 元数据位于：
 
 - [skills/yiuimcp/agents/openai.yaml](skills/yiuimcp/agents/openai.yaml)
+
+## 随身记忆（memory/）
+
+`memory/` 收录了与具体项目无关、可移植的 AI 经验（插件定位、YIUI 架构、关键踩坑、插件对比），方便把本插件放进新工程时让该工程的 AI 直接复用：
+
+- [memory/README.md](memory/README.md): 使用方式（SKILL.md 自动加载；memory 可手动导入新工程的 `~/.claude/.../memory/`）
+- [memory/yiuimcp-knowledge.md](memory/yiuimcp-knowledge.md): 核心知识与踩坑
+- [memory/unity-mcp-plugin-comparison.md](memory/unity-mcp-plugin-comparison.md): 与其他 Unity-MCP 插件对比
 
 ## 重要说明
 
