@@ -22,6 +22,14 @@ namespace YIUIFramework.Editor.MCP
 
         public static int ToolCount => _tools.Count;
 
+        /// <summary>
+        /// 是否存在指定名称的原生 YIUIMCP 工具。供 Coplay 适配层做同名冲突检测与 RPC 分支用。
+        /// </summary>
+        public static bool Has(string name)
+        {
+            return !string.IsNullOrEmpty(name) && _tools.ContainsKey(name);
+        }
+
         private static readonly Dictionary<string, YIUIMCPToolInfo> _flows = new();
 
         public static IReadOnlyDictionary<string, YIUIMCPToolInfo> Flows => _flows;

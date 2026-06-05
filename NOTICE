@@ -10,3 +10,20 @@ YIUI ecosystem:
 https://github.com/LiShengYang-yiyi/YIUI
 
 Attribution in derivative distributions is appreciated.
+
+------------------------------------------------------------------------
+Third-party code
+------------------------------------------------------------------------
+
+This product vendors a subset of tool/helper source files from:
+
+  MCP for Unity
+  Copyright (c) 2025 CoplayDev
+  https://github.com/CoplayDev/unity-mcp
+  Licensed under the MIT License.
+
+Vendored files live under:
+  cn.etetet.yiuimcp/Editor/UnityMCP/Coplay/
+
+Each vendored file carries an attribution header. The full MIT license
+text is reproduced in THIRD-PARTY-NOTICES.md.

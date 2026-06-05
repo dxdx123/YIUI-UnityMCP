@@ -272,7 +272,23 @@ namespace YIUIFramework.Editor.MCP
                 YIUIMCPLog.Log($" [RPC] 开始处理: {method}");
                 #endif
 
-                var resultObj = await YIUIMCPDispatcher.Dispatch(() => YIUIMCPToolsRegistry.Invoke(method, paramsJson));
+                object resultObj;
+                if (YIUIMCPToolsRegistry.Has(method))
+                {
+                    // 原生 YIUIMCP 工具优先（保持现有行为不变）
+                    resultObj = await YIUIMCPDispatcher.Dispatch(() => YIUIMCPToolsRegistry.Invoke(method, paramsJson));
+                }
+                else if (YIUIMCPCoplayRegistry.Has(method))
+                {
+                    // 搬运自 Coplay 的工具：直接用 JObject 参数调用，其返回对象作为 result 序列化
+                    var paramsObj = root["params"] as JObject ?? new JObject();
+                    resultObj = await YIUIMCPDispatcher.Dispatch(() => YIUIMCPCoplayRegistry.Invoke(method, paramsObj));
+                }
+                else
+                {
+                    // 未命中：交回原生 Invoke，产出统一的「没有这个MCP工具」错误结果
+                    resultObj = await YIUIMCPDispatcher.Dispatch(() => YIUIMCPToolsRegistry.Invoke(method, paramsJson));
+                }
 
                 #if YIUIMCP_DEBUG
                 var elapsed = (DateTime.Now - startTime).TotalMilliseconds;

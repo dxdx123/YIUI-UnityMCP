@@ -41,6 +41,9 @@ namespace YIUIFramework.Editor.MCP
 
             YIUIMCPToolsRegistry.Initialize();
 
+            // 发现并注册搬运自 Coplay 的工具（[McpForUnityTool] + HandleCommand(JObject)）
+            YIUIMCPCoplayRegistry.Initialize();
+
             if (YIUIMCPServerConfig.StartMode == EYIUIMCPStartMode.Close)
             {
                 return;
