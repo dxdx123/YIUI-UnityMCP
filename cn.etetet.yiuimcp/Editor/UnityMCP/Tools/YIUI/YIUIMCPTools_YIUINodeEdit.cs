@@ -178,6 +178,61 @@ namespace YIUIFramework.Editor.MCP
 
     [HideLabel]
     [HideReferenceObjectPicker]
+    public class YIUISetTextParams : YIUIMCPBaseParams
+    {
+        public string prefabPath;
+        public string nodePath = ".";
+        public int fontSize = 0;                       // <=0 则不修改
+        public string alignment = "MiddleCenter";      // UnityEngine.TextAnchor
+        public Color color = new Color(1f, 1f, 1f, 1f);
+        public bool setColor = true;
+        public bool bestFit = false;
+        public string horizontalOverflow = "Overflow"; // UnityEngine.HorizontalWrapMode
+        public string verticalOverflow = "Overflow";   // UnityEngine.VerticalWrapMode
+        public bool raycastTarget = false;
+        public string text;                            // 可选初始文本(运行时会被数据绑定覆盖)
+    }
+
+    [YIUIMCPTools("YIUISetText", "设置节点的Text组件(字号/对齐/颜色/溢出)")]
+    public class YIUIMCPTools_YIUISetText : YIUIMCPBaseExecutor<YIUISetTextParams>
+    {
+        protected override async Task<YIUIMCPResult> Run(YIUISetTextParams data)
+        {
+            if (string.IsNullOrWhiteSpace(data.prefabPath)) return YIUIMCPResult.FailureLog("prefabPath不能为空");
+
+            var message = YIUIMCPYIUIHelper.EditPrefab(data.prefabPath, (root, _) =>
+            {
+                var target = YIUIMCPYIUIHelper.FindChildByPath(root.transform, data.nodePath);
+                var text = target.gameObject.GetOrAddComponent<Text>();
+
+                // 旧版UI默认字体可能为空 -> 兜底使用内置字体, 否则不显示
+                if (text.font == null)
+                {
+                    text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+                                ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+                }
+
+                if (data.fontSize > 0) text.fontSize = data.fontSize;
+                if (!string.IsNullOrWhiteSpace(data.alignment) && Enum.TryParse<TextAnchor>(data.alignment, true, out var anchor))
+                    text.alignment = anchor;
+                if (data.setColor) text.color = data.color;
+                text.resizeTextForBestFit = data.bestFit;
+                if (Enum.TryParse<HorizontalWrapMode>(data.horizontalOverflow, true, out var hm)) text.horizontalOverflow = hm;
+                if (Enum.TryParse<VerticalWrapMode>(data.verticalOverflow, true, out var vm)) text.verticalOverflow = vm;
+                text.raycastTarget = data.raycastTarget;
+                if (data.text != null) text.text = data.text;
+
+                EditorUtility.SetDirty(text);
+                return $"成功设置Text: {data.nodePath} (fontSize={text.fontSize}, alignment={text.alignment})";
+            });
+
+            await Task.CompletedTask;
+            return YIUIMCPResult.Success(message);
+        }
+    }
+
+    [HideLabel]
+    [HideReferenceObjectPicker]
     public class YIUIAddTextBindingToNodeParams : YIUIMCPBaseParams
     {
         public string prefabPath;
