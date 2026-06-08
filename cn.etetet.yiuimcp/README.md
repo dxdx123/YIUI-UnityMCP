@@ -133,6 +133,59 @@ Use $yiuimcp to compile this Unity project through its bundled CLI flow.
 - [memory/yiuimcp-knowledge.md](memory/yiuimcp-knowledge.md): 核心知识与踩坑
 - [memory/unity-mcp-plugin-comparison.md](memory/unity-mcp-plugin-comparison.md): 与其他 Unity-MCP 插件对比
 
+## 维护与扩展注意事项
+
+### 新增 C# 工具后的完整联动
+
+新增一个带 `[YIUIMCPTools]` 特性的 C# 工具后，需要同步更新以下 **4 处**，缺一不可：
+
+| 步骤 | 操作 | 文件 |
+|---|---|---|
+| 1 | 重跑工具表生成脚本 | `Config/gen-skill-tools.ps1` → 更新 `skills/yiuimcp/SKILL.md` 第 5 节 |
+| 2 | 同步 UTO 静态工具表 | `UTO/src/index.ts` → `STATIC_TOOLS` 数组追加新工具 |
+| 3 | 重新编译 UTO | `cd UTO && npm run build` |
+| 4 | 同步 AI 客户端上下文 | `Config/cursor/yiuimcp.mdc` 和 `Config/codex/AGENTS.yiuimcp.mdc` 的工具速查节 |
+
+**为什么要更新 STATIC_TOOLS？**
+Cursor / Codex 显示的工具列表来自 `index.ts` 里的静态表，不是 Unity 运行时动态返回的（Unity 的 `ListTools` RPC 可能只返回部分工具）。静态表是完整工具列表对外暴露的权威来源。
+
+### 修改 UTO（TypeScript）后必须重新 build
+
+`UTO/src/*.ts` 文件被修改后，Cursor / Codex 实际运行的是 `UTO/build/index.js`（编译产物），不是 `.ts` 源文件。每次修改 TS 都必须：
+
+```bash
+cd Packages/cn.etetet.yiuimcp/UTO
+npm run build
+```
+
+然后在 Cursor 里 `Ctrl+Shift+P → Developer: Reload Window` 让 MCP 客户端重连，才会加载新版本。
+
+> `tsconfig.json` 在仓库根已补充，初次 build 前先 `npm install`。
+
+### PowerShell 脚本必须纯 ASCII
+
+`Config/` 下所有 `.ps1` 文件**不能写中文字面量或中文注释**（PowerShell 5.1 无 BOM 时按 GBK 解析，中文会乱码）。需要输出中文时，把内容存入 UTF-8 的 `.md` / `.txt` 文件，然后在 `.ps1` 里用：
+
+```powershell
+Get-Content "path\to\file.md" -Encoding UTF8
+```
+
+`Config/cursor/yiuimcp.mdc` 和 `Config/codex/AGENTS.yiuimcp.mdc` 是纯 Markdown，可以包含中文，不受此限制。
+
+### AI 客户端重连
+
+修改 `UTO/src/index.ts` 并 build 后，需要重启或重新加载 AI 客户端才能使新工具列表生效：
+
+- **Cursor**：`Ctrl+Shift+P → Developer: Reload Window`
+- **Codex**：重新执行 `codex` 命令
+- **Claude Code**：重新执行 `claude --plugin-dir Packages/cn.etetet.yiuimcp`
+
+### 新建文件与 Unity .meta
+
+在包目录内新建文件后，Unity 会自动生成 `.meta` 文件。如需把这些文件一起提交到版本库，记得把对应的 `.meta` 一起加入 git。
+
+---
+
 ## 重要说明
 
 - `UTO/.port` 记录 Unity 端口；UTO HTTP 端口按 `Unity端口 + 1` 计算

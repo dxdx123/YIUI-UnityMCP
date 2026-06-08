@@ -127,6 +127,59 @@ async function callUnityRpc(method: string, params: any = {}): Promise<any> {
     }
 }
 
+// 静态工具表：确保 Cursor/Codex 等客户端始终能看到完整列表，
+// 即使 Unity 端 ListTools 运行时只返回部分工具。
+// CallTool 仍然动态转发，所以列表和实际调用互相独立。
+const STATIC_TOOLS: Array<{ name: string; description: string }> = [
+    // Basic
+    { name: "Log",                      description: "打印日志" },
+    { name: "LogError",                 description: "打印错误日志" },
+    { name: "EnterPlayMode",            description: "进入运行模式" },
+    { name: "StopPlayMode",             description: "退出运行模式" },
+    { name: "TriggerCompile",           description: "触发编译" },
+    { name: "GetCompileResult",         description: "获取编译结果" },
+    { name: "GetConsoleLog",            description: "获取控制台日志" },
+    { name: "ExecuteMenu",              description: "执行Unity菜单命令" },
+    { name: "AssertConsoleContains",    description: "断言控制台日志包含关键词" },
+    // YIUI ops
+    { name: "YIUIAddComponent",             description: "添加Unity组件到Prefab节点" },
+    { name: "YIUIAddComponentBinding",      description: "通过YIUI API给Prefab添加Component绑定" },
+    { name: "YIUIAddDataBindActive",        description: "添加UIDataBindActive组件控制节点显隐" },
+    { name: "YIUIAddDataBindColor",         description: "添加UIDataBindColor组件控制Graphic颜色" },
+    { name: "YIUIAddDataBindImage",         description: "添加UIDataBindImage组件控制Image sprite" },
+    { name: "YIUIAddDataBinding",           description: "通过YIUI API给Prefab添加Data变量" },
+    { name: "YIUIAddEventBinding",          description: "通过YIUI API给Prefab添加Event事件" },
+    { name: "YIUIAddTextBindingToNode",     description: "在节点上添加文本绑定到YIUI Data" },
+    { name: "YIUIBindClickEventToNode",     description: "在指定节点上添加UIEventBindClick并绑定事件" },
+    { name: "YIUICaptureGameView",          description: "截取运行时Game视图为PNG(需Play)" },
+    { name: "YIUICapturePrefab",            description: "渲染UI Prefab为PNG(布局自检)" },
+    { name: "YIUICreateChildNode",          description: "在Prefab中创建子节点" },
+    { name: "YIUICreateLoopScroll",         description: "在Prefab节点下创建YIUI LoopScroll滚动列表" },
+    { name: "YIUICreateModule",             description: "通过YIUI自动化工具创建UI模块目录" },
+    { name: "YIUICreatePanelSource",        description: "创建标准YIUI Panel源数据(含UIBlockBG/AllViewParent/AllPopupViewParent)" },
+    { name: "YIUICreatePrefab",             description: "通过Unity/YIUI API创建Panel/View/Common Prefab" },
+    { name: "YIUICreateView",               description: "在Panel源数据的AllViewParent下创建View" },
+    { name: "YIUIDeleteChildNode",          description: "删除Prefab子节点" },
+    { name: "YIUIDuplicateNode",            description: "复制Prefab节点" },
+    { name: "YIUIExportCode",               description: "调用YIUI自动化工具为Prefab导出生成代码" },
+    { name: "YIUIInspectPrefab",            description: "读取Prefab上的YIUI CDE绑定信息" },
+    { name: "YIUIMoveNode",                 description: "移动Prefab节点到新父节点或调整同级顺序" },
+    { name: "YIUIOpenAutoTool",             description: "打开YIUI自动化工具窗口" },
+    { name: "YIUIRemoveComponent",          description: "从Prefab节点移除Unity组件" },
+    { name: "YIUISetContentSizeFitter",     description: "设置Prefab节点的ContentSizeFitter" },
+    { name: "YIUISetGraphic",               description: "设置节点的图形组件" },
+    { name: "YIUISetLayerRecursive",        description: "设置Prefab节点Layer，可递归设置子节点" },
+    { name: "YIUISetLayoutElement",         description: "设置Prefab节点的LayoutElement属性" },
+    { name: "YIUISetLayoutGroup",           description: "设置Prefab节点的LayoutGroup" },
+    { name: "YIUISetNodeActive",            description: "设置Prefab节点的激活状态" },
+    { name: "YIUISetRectTransform",         description: "设置Prefab节点的RectTransform" },
+    { name: "YIUISetText",                  description: "设置节点的Text组件(字号/对齐/颜色/溢出)" },
+    { name: "YIUISimulateClick",            description: "Play模式下按名字模拟点击UI节点" },
+    { name: "YIUISourceSplit",              description: "源数据拆分: 将Source面板拆分生成到Prefabs目录" },
+    // Coplay style
+    { name: "find_gameobjects",             description: "按名查找 GameObject（注意：只搜有限范围，勿依赖做运行态层级查询）" },
+];
+
 // MCP Server
 const server = new Server(
   {
@@ -140,18 +193,39 @@ const server = new Server(
   }
 );
 
-// ListTools - 尝试从 Unity MCP 获取，否则返回空列表
+// ListTools - 静态表保底（始终显示完整工具列表），Unity 返回的 schema 来了就合并
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+    // 尝试从 Unity 获取带 inputSchema 的完整定义
+    let unityTools: any[] = [];
     try {
         const result = await callUnityRpc("ListTools", {});
         if (result && result.tools) {
-            return { tools: result.tools };
+            unityTools = result.tools;
         }
-    } catch (error) {
-        // Unity MCP 不支持 ListTools，返回空列表
+    } catch (_) {
+        // Unity 不在线或不支持 ListTools，用静态表兜底
     }
-    
-    return { tools: [] };
+
+    const unityMap = new Map<string, any>(unityTools.map((t: any) => [t.name, t]));
+
+    // 静态表为主（保证完整），Unity schema 来了就覆盖 description/inputSchema
+    const tools = STATIC_TOOLS.map(s => {
+        const u = unityMap.get(s.name);
+        return {
+            name: s.name,
+            description: u?.description ?? s.description,
+            inputSchema: u?.inputSchema ?? { type: "object" },
+        };
+    });
+
+    // Unity 多返回了静态表里没有的工具，也追加进来
+    for (const u of unityTools) {
+        if (!tools.find(t => t.name === u.name)) {
+            tools.push(u);
+        }
+    }
+
+    return { tools };
 });
 
 // CallTool - 直接转发到 Unity MCP（心跳检测在 http-server 层处理）
