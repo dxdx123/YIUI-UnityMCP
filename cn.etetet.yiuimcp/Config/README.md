@@ -12,6 +12,7 @@
 - `proto2cs-flow.ps1`（ET/Proto/Proto2CS）
 - `excel-export-flow.ps1`（ET/Excel/ExcelExporter）
 - `gen-skill-tools.ps1`（生成 skills/yiuimcp/SKILL.md 工具速查表，纯 ASCII 脚本）
+- `cursor-setup.ps1`（在 Unity 项目根目录生成 `.cursor/mcp.json` 和 `.cursor/rules/yiuimcp.mdc`，让 Cursor 支持 YIUI MCP）
 
 ## 运行前提
 
@@ -318,6 +319,35 @@ powershell -ExecutionPolicy Bypass -Command "& '.\Packages\cn.etetet.yiuimcp\Con
 - `get_console_log.ps1`：正常
 - `get_console_error.ps1`：正常，但语义更接近“获取编译结果”
 - `invoke-uto-tool.ps1`：正常
+
+## 6. cursor-setup.ps1
+
+### 作用
+
+在 Unity 项目根目录创建：
+- `.cursor/mcp.json` — 注册 yiuimcp MCP Server，让 Cursor Agent 模式能直接调用所有 YIUI 工具
+- `.cursor/rules/yiuimcp.mdc` — 注入使用指南（关键踩坑 + 工作流 + 工具速查）
+
+### 运行一次即可，无需重复
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "Packages\cn.etetet.yiuimcp\Config\cursor-setup.ps1"
+```
+
+运行后：
+
+1. 重启 Cursor（或 `Ctrl+Shift+P → Developer: Reload Window`）
+2. `Cursor Settings → Features → MCP Servers` 确认 yiuimcp 已列出
+3. 打开 Unity，确认 cn.etetet.yiuimcp 已加载（端口 3212）
+4. 在 Cursor Agent 模式下，所有 YIUI 工具自动可用
+
+### 注意
+
+- **UTO 需先 build**：首次使用前在 `Packages/cn.etetet.yiuimcp/UTO/` 执行 `npm install && npm run build`
+- 若 `.cursor/mcp.json` 已存在且含 yiuimcp，脚本会跳过（手动删除该 entry 后重跑即可更新路径）
+- 若已存在其他 mcpServers，脚本会把 yiuimcp 注入进去，不覆盖其他配置
+
+---
 
 ## 当前已知注意事项
 

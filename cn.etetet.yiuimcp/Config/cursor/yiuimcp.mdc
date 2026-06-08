@@ -1,0 +1,62 @@
+---
+description: YIUI MCP — 适用于含 Packages/cn.etetet.yiuimcp 的 ET/YIUI Unity 工程的 UI 自动化。搭面板/视图/列表、编辑布局、绑定组件/数据/事件、截图自检、运行态验证。
+globs:
+alwaysApply: false
+---
+
+# YIUI MCP — Unity UI 自动化
+
+> 仅适用于包含 `Packages/cn.etetet.yiuimcp` 的 ET/YIUI 工程。
+
+## 调用方式
+
+MCP 工具已通过 Cursor MCP 集成自动注册，在 Agent 模式下直接调用工具名即可。
+
+健康检查：`GET http://127.0.0.1:3212/health` 返回 `{"status":"ok"}` 即服务在线。
+
+中文参数或复杂调用可走 PowerShell 兜底：
+```powershell
+# 先 base64 编码参数，再调
+$json = '{"message":"Hello"}'
+$b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+powershell -ExecutionPolicy Bypass -File "Packages\cn.etetet.yiuimcp\Config\invoke-uto-tool.ps1" -Tool "Log" -ParamsBase64 $b64
+```
+
+## 关键踩坑（务必遵守）
+
+1. **LoopScroll Item 必须有 `LayoutElement`**（`preferredWidth/Height`），否则列表全空但业务日志正常——极易误判为逻辑 bug。
+2. **中文参数用 JSON `\uXXXX` 转义**（如 `测试`），shell 层会破坏 UTF-8 字节。
+3. **`TriggerCompile` / `YIUIExportCode` / `YIUISourceSplit` 触发域重载** → 本次请求超时或返回空，但 Unity 已完成工作。处理：超时后轮询 `/health` 直到 200，再 `GetCompileResult` 确认；serverId 变化即代表发生过重载。
+4. **组件绑定走 `YIUIAddComponentBinding`**，不要直接写 `m_AllBindDic`（导出时 AutoCheck 会清空重建导致丢失）。
+5. **Loop Item 的 codeType = `Common`**，不是 View。
+6. **data 名传全名**（如 `u_DataIndex`），不要传 `index`——否则导出后 key 不一致。
+7. **Play 模式下改 prefab 会在域重载后回滚** → 改 prefab 一律先 `StopPlayMode`，改完 grep 磁盘确认落盘。
+8. **`GetConsoleLog` 的 `logType`** 用 `ErrorMask`/`WarningMask`/`LogMask`/`All`，不是字符串 `"Error"`。
+9. **`find_gameobjects` 找不到嵌套 YIUI 节点**，运行态找节点用 `YIUISimulateClick` 间接验证。
+
+## 标准三层列表流程
+
+Panel → View（含 LoopScrollRect）→ Item（codeType=Common）：
+
+1. `YIUICreatePanelSource` → `YIUICreateChildNode`（加按钮等）→ `YIUIAddEventBinding` → `YIUISourceSplit`
+2. `YIUICreateView`（在 AllViewParent 下）→ View 内 `YIUICreateLoopScroll` + `YIUIAddComponentBinding`
+3. `YIUICreatePrefab(codeType=Common)` → `YIUICreateChildNode` → `YIUIAddDataBinding(u_DataIndex,Int)` → `YIUIAddTextBindingToNode` → **`YIUISetLayoutElement(preferredWidth/Height=item尺寸)`** ← 必须！
+4. `YIUIExportCode` 各跑一次（Panel / View / Item，各生成 4 类 .cs）
+5. 编译验证：`powershell ... compile-unity-flow.ps1`
+
+## 自检闭环
+
+- **静态自检**：改完 prefab → `YIUICapturePrefab{prefabPath,width,height}` → Read 图 → 不对就改 → 再截。Panel 用设计分辨率（本工程 1920×1080 横屏）。
+- **运行态验证**：`EnterPlayMode` → `YIUISimulateClick{name}` → `YIUICaptureGameView{outputPath}`（等 ~1s 落盘再 Read）。
+
+## 工具速查（43 个）
+
+**基础（编译/控制台/Play/菜单）**
+
+`TriggerCompile` `GetCompileResult` `GetConsoleLog` `AssertConsoleContains` `EnterPlayMode` `StopPlayMode` `ExecuteMenu` `Log` `LogError`
+
+**YIUI 操作（创建/节点/布局/绑定/截图）**
+
+`YIUICreateModule` `YIUICreatePanelSource` `YIUICreatePrefab` `YIUICreateView` `YIUICreateChildNode` `YIUICreateLoopScroll` `YIUISourceSplit` `YIUIExportCode` `YIUIInspectPrefab` `YIUIAddComponentBinding` `YIUIAddDataBinding` `YIUIAddEventBinding` `YIUIAddTextBindingToNode` `YIUIAddDataBindActive` `YIUIAddDataBindColor` `YIUIAddDataBindImage` `YIUIBindClickEventToNode` `YIUISetRectTransform` `YIUISetLayoutElement` `YIUISetLayoutGroup` `YIUISetContentSizeFitter` `YIUISetGraphic` `YIUISetText` `YIUISetNodeActive` `YIUISetLayerRecursive` `YIUIAddComponent` `YIUIRemoveComponent` `YIUIMoveNode` `YIUIDuplicateNode` `YIUIDeleteChildNode` `YIUIOpenAutoTool` `YIUICapturePrefab` `YIUICaptureGameView` `YIUISimulateClick`
+
+**Coplay 风格**：`find_gameobjects`（按名找 GameObject，注意仅有限范围，别依赖它做运行态层级查询）
