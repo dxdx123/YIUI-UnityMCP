@@ -13,6 +13,7 @@
 - `excel-export-flow.ps1`（ET/Excel/ExcelExporter）
 - `gen-skill-tools.ps1`（生成 skills/yiuimcp/SKILL.md 工具速查表，纯 ASCII 脚本）
 - `cursor-setup.ps1`（在 Unity 项目根目录生成 `.cursor/mcp.json` 和 `.cursor/rules/yiuimcp.mdc`，让 Cursor 支持 YIUI MCP）
+- `codex-setup.ps1`（在 Unity 项目根目录生成 `.codex/config.toml` MCP 配置并写入 `AGENTS.md`，让 OpenAI Codex CLI 支持 YIUI MCP）
 
 ## 运行前提
 
@@ -346,6 +347,32 @@ powershell -ExecutionPolicy Bypass -File "Packages\cn.etetet.yiuimcp\Config\curs
 - **UTO 需先 build**：首次使用前在 `Packages/cn.etetet.yiuimcp/UTO/` 执行 `npm install && npm run build`
 - 若 `.cursor/mcp.json` 已存在且含 yiuimcp，脚本会跳过（手动删除该 entry 后重跑即可更新路径）
 - 若已存在其他 mcpServers，脚本会把 yiuimcp 注入进去，不覆盖其他配置
+
+## 7. codex-setup.ps1
+
+### 作用
+
+在 Unity 项目根目录创建/更新：
+- `.codex/config.toml` — 注册 `[mcp_servers.yiuimcp]`，让 OpenAI Codex CLI 自动连接 YIUI MCP Server
+- `AGENTS.md` — 注入 YIUI 使用指南（关键踩坑 + 工作流 + 工具速查）；若文件已存在则追加，不覆盖
+
+### 运行一次即可
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "Packages\cn.etetet.yiuimcp\Config\codex-setup.ps1"
+```
+
+运行后：
+
+1. 打开 Unity，确认 cn.etetet.yiuimcp 已加载（端口 3212）
+2. 在 Unity 项目根目录执行 `codex` 启动 Codex CLI
+3. Codex 自动连接 yiuimcp MCP Server，所有 YIUI 工具自动注册
+
+### 注意
+
+- **UTO 需先 build**：首次使用前在 `Packages/cn.etetet.yiuimcp/UTO/` 执行 `npm install && npm run build`
+- 若 `.codex/config.toml` 已存在，脚本只追加 `[mcp_servers.yiuimcp]` 块，不覆盖其他配置
+- 若 `AGENTS.md` 已存在，脚本追加 YIUI 章节（用 `<!-- yiuimcp:start -->` 标记防止重复追加）
 
 ---
 
